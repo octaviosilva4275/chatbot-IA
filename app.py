@@ -33,6 +33,16 @@ def _is_safe_mode_enabled() -> bool:
     return query_value in {"1", "true", "yes", "on"}
 
 
+def _resolve_api_key() -> str | None:
+    # Prioriza st.secrets para deploy (ex.: Streamlit Cloud) e
+    # mantém fallback para variáveis de ambiente em execução local.
+    secrets_key = st.secrets.get("GEMINI_API_KEY") or st.secrets.get("GOOGLE_API_KEY")
+    if secrets_key:
+        return str(secrets_key)
+
+    return os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
+
+
 def bootstrap() -> tuple[ChatDatabase, GeminiClient]:
     load_dotenv()
 
@@ -52,7 +62,7 @@ def bootstrap() -> tuple[ChatDatabase, GeminiClient]:
     else:
         apply_global_styles()
 
-    api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
+    api_key = _resolve_api_key()
     database = ChatDatabase()
     client = GeminiClient(api_key=api_key)
     return database, client

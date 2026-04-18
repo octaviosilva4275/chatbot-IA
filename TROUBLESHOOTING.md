@@ -31,3 +31,13 @@ Se a aplicação abrir mas o layout estiver quebrado, use:
 - variável de ambiente `SAFE_MODE=1`
 
 Isso desativa CSS customizado para facilitar diagnóstico de renderização.
+
+## Configurar chave via `st.secrets`
+
+Para deploy no Streamlit Cloud, prefira configurar a API key em **Secrets**:
+
+```toml
+GEMINI_API_KEY="sua_chave_aqui"
+```
+
+O app agora prioriza `st.secrets` e usa variáveis de ambiente apenas como fallback.

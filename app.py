@@ -24,6 +24,15 @@ from src.ui import (
 )
 
 
+def _is_safe_mode_enabled() -> bool:
+    env_value = os.getenv("SAFE_MODE", "").strip().lower()
+    if env_value in {"1", "true", "yes", "on"}:
+        return True
+
+    query_value = str(st.query_params.get("safe_mode", "")).strip().lower()
+    return query_value in {"1", "true", "yes", "on"}
+
+
 def bootstrap() -> tuple[ChatDatabase, GeminiClient]:
     load_dotenv()
 
@@ -35,7 +44,13 @@ def bootstrap() -> tuple[ChatDatabase, GeminiClient]:
     )
 
     ensure_session_state()
-    apply_global_styles()
+    if _is_safe_mode_enabled():
+        st.info(
+            "Modo seguro ativo: estilos customizados foram desativados. "
+            "Use este modo para diagnosticar problemas de renderizacao."
+        )
+    else:
+        apply_global_styles()
 
     api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
     database = ChatDatabase()

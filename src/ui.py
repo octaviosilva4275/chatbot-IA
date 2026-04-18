@@ -1,28 +1,387 @@
 from __future__ import annotations
 
-import io
-import csv
+import hashlib
+import html
+from io import BytesIO
 
 import streamlit as st
 
 
-def inject_css() -> None:
+MAX_FILE_CONTEXT_CHARS = 12000
+SUGGESTED_PROMPTS = [
+    {
+        "tag": "Codigo",
+        "title": "Explique um trecho de codigo",
+        "body": "Entenda rapidamente o que um trecho faz, os riscos e como melhorar.",
+        "cta": "Explicar codigo",
+        "prompt": "Explique este codigo passo a passo, diga o que cada parte faz e sugira melhorias.",
+    },
+    {
+        "tag": "Resumo",
+        "title": "Resuma um texto ou documento",
+        "body": "Transforme um material longo em pontos claros e acionaveis.",
+        "cta": "Resumir material",
+        "prompt": "Resuma este material em topicos objetivos, destaque o principal e termine com proximos passos.",
+    },
+    {
+        "tag": "Plano",
+        "title": "Monte um plano de estudo",
+        "body": "Estruture uma rotina realista com metas semanais e pratica.",
+        "cta": "Criar plano",
+        "prompt": "Monte um plano de estudos de 4 semanas com metas, exercicios e revisoes.",
+    },
+    {
+        "tag": "Texto",
+        "title": "Melhore uma escrita",
+        "body": "Refine um texto com mais clareza, ritmo e impacto.",
+        "cta": "Melhorar texto",
+        "prompt": "Reescreva este texto com mais clareza, fluidez e impacto, mantendo um tom natural.",
+    },
+]
+
+
+def apply_global_styles() -> None:
     st.markdown(
         """
         <style>
-            .main { padding-top: 0.6rem; }
-            .block-container { max-width: 1050px; padding-top: 1rem; }
-            .hero {
-                text-align: center;
-                margin: 2.4rem auto 1.8rem;
-                max-width: 700px;
-                animation: fadeIn .45s ease-out;
+            @import url('https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Source+Serif+4:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+            :root {
+                --bg: #f7f4ee;
+                --bg-soft: #fbfaf7;
+                --panel: #ffffff;
+                --panel-soft: #fcfbf8;
+                --panel-muted: #f1ece3;
+                --border: #e5ddd0;
+                --border-strong: #d8cdbd;
+                --text: #2f2a24;
+                --muted: #6d655b;
+                --accent: #9a6248;
+                --accent-soft: #efe3d8;
+                --success-soft: #e9f0e5;
+                --shadow: 0 10px 30px rgba(51, 37, 24, 0.05);
+                --radius-xl: 26px;
+                --radius-lg: 20px;
+                --radius-md: 16px;
             }
-            .hero h1 { font-size: 2rem; margin-bottom: 0.4rem; }
-            .hero p { color: #9aa0a6; margin-bottom: 1rem; }
-            @keyframes fadeIn {
-                from { opacity: 0; transform: translateY(6px); }
-                to { opacity: 1; transform: translateY(0); }
+
+            html, body, [class*="css"] {
+                font-family: "Instrument Sans", sans-serif;
+                color-scheme: light;
+            }
+
+            .stApp {
+                color: var(--text);
+                background:
+                    radial-gradient(circle at top left, rgba(154, 98, 72, 0.05), transparent 20%),
+                    linear-gradient(180deg, #faf7f2 0%, #f7f4ee 100%);
+            }
+
+            .block-container {
+                max-width: 1120px;
+                padding-top: 1.1rem;
+                padding-bottom: 6.5rem;
+            }
+
+            section[data-testid="stSidebar"] > div {
+                background: #f3eee6;
+                border-right: 1px solid var(--border);
+            }
+
+            section[data-testid="stSidebar"] .block-container {
+                padding-top: 1rem;
+            }
+
+            h1, h2, h3 {
+                font-family: "Source Serif 4", serif;
+                color: var(--text);
+                letter-spacing: -0.03em;
+            }
+
+            p, label, .stCaption {
+                color: var(--muted);
+            }
+
+            .stButton > button,
+            .stDownloadButton > button {
+                width: 100%;
+                min-height: 46px;
+                border-radius: 14px;
+                border: 1px solid var(--border);
+                background: var(--panel);
+                color: var(--text);
+                box-shadow: none;
+                transition: background 180ms ease, border-color 180ms ease, transform 180ms ease;
+                cursor: pointer;
+            }
+
+            .stButton > button:hover,
+            .stDownloadButton > button:hover {
+                background: var(--bg-soft);
+                border-color: var(--border-strong);
+                transform: translateY(-1px);
+            }
+
+            .stButton > button[kind="primary"] {
+                background: var(--text);
+                color: white;
+                border-color: var(--text);
+            }
+
+            .stButton > button[kind="primary"]:hover {
+                background: #1f1b17;
+                border-color: #1f1b17;
+            }
+
+            .stButton > button:focus-visible,
+            .stDownloadButton > button:focus-visible,
+            textarea:focus-visible,
+            input:focus-visible,
+            [data-baseweb="select"] input:focus-visible {
+                outline: 3px solid rgba(154, 98, 72, 0.16);
+                outline-offset: 2px;
+            }
+
+            div[data-baseweb="select"] > div,
+            div[data-baseweb="input"] > div,
+            textarea,
+            div[data-testid="stFileUploaderDropzone"] {
+                background: var(--panel) !important;
+                border: 1px solid var(--border) !important;
+                border-radius: 16px !important;
+                color: var(--text) !important;
+                box-shadow: none !important;
+            }
+
+            textarea {
+                font-family: "Instrument Sans", sans-serif !important;
+            }
+
+            div[data-testid="stFileUploaderDropzone"] {
+                background: var(--panel-soft) !important;
+                border-style: dashed !important;
+                padding: 1rem;
+            }
+
+            [data-testid="stChatInput"] {
+                background: linear-gradient(180deg, rgba(247,244,238,0.2) 0%, rgba(247,244,238,0.94) 40%, rgba(247,244,238,1) 100%);
+                border-top: 1px solid rgba(229, 221, 208, 0.9);
+            }
+
+            [data-testid="stChatInput"] textarea {
+                background: var(--panel) !important;
+                color: var(--text) !important;
+                border-radius: 18px !important;
+                padding-top: 0.95rem !important;
+            }
+
+            div[data-testid="stChatMessage"] {
+                border: 1px solid var(--border);
+                border-radius: 22px;
+                padding: 0.45rem 0.65rem;
+                margin-bottom: 0.95rem;
+                box-shadow: var(--shadow);
+            }
+
+            div[data-testid="stChatMessage"][aria-label="assistant message"] {
+                background: var(--panel);
+                margin-right: 9%;
+            }
+
+            div[data-testid="stChatMessage"][aria-label="user message"] {
+                background: var(--accent-soft);
+                border-color: #dcc8b9;
+                margin-left: 9%;
+            }
+
+            div[data-testid="stChatMessage"] [data-testid="stMarkdownContainer"] p,
+            div[data-testid="stChatMessage"] [data-testid="stMarkdownContainer"] li {
+                color: var(--text);
+                line-height: 1.75;
+                font-size: 0.99rem;
+            }
+
+            div[data-testid="stChatMessage"] code,
+            .stCode code {
+                font-family: "IBM Plex Mono", monospace !important;
+            }
+
+            [data-testid="stExpander"] {
+                border: 1px solid var(--border);
+                border-radius: 16px;
+                background: var(--panel);
+            }
+
+            .sidebar-shell,
+            .top-shell,
+            .suggestion-card,
+            .sidebar-note {
+                background: var(--panel);
+                border: 1px solid var(--border);
+                box-shadow: var(--shadow);
+            }
+
+            .sidebar-shell {
+                padding: 1rem;
+                border-radius: 20px;
+                margin-bottom: 1rem;
+            }
+
+            .sidebar-shell h2 {
+                margin: 0;
+                font-size: 1.35rem;
+            }
+
+            .sidebar-shell p,
+            .sidebar-note p {
+                margin: 0.45rem 0 0 0;
+                line-height: 1.65;
+            }
+
+            .sidebar-note {
+                margin-top: 1rem;
+                padding: 0.95rem;
+                border-radius: 16px;
+            }
+
+            .sidebar-note span,
+            .metric-card span,
+            .eyebrow,
+            .message-label,
+            .section-label,
+            .suggestion-tag {
+                font-size: 0.72rem;
+                text-transform: uppercase;
+                letter-spacing: 0.14em;
+                color: var(--muted);
+                font-weight: 700;
+            }
+
+            .top-shell {
+                display: grid;
+                grid-template-columns: minmax(0, 1.6fr) minmax(260px, 0.9fr);
+                gap: 1rem;
+                padding: 1.35rem;
+                border-radius: var(--radius-xl);
+                margin-bottom: 1.2rem;
+            }
+
+            .top-shell h1 {
+                margin: 0.2rem 0 0 0;
+                font-size: clamp(2.2rem, 4vw, 3.5rem);
+                line-height: 0.95;
+                max-width: 11ch;
+            }
+
+            .top-shell p {
+                margin: 0.9rem 0 0 0;
+                line-height: 1.78;
+                max-width: 58ch;
+            }
+
+            .meta-row {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 0.6rem;
+                margin-top: 1rem;
+            }
+
+            .meta-pill {
+                display: inline-flex;
+                align-items: center;
+                gap: 0.35rem;
+                padding: 0.62rem 0.82rem;
+                border-radius: 999px;
+                background: var(--panel-soft);
+                border: 1px solid var(--border);
+                color: var(--text);
+                font-size: 0.9rem;
+            }
+
+            .meta-pill strong {
+                color: var(--text);
+            }
+
+            .stats-shell {
+                display: grid;
+                gap: 0.8rem;
+                align-content: start;
+            }
+
+            .metric-card {
+                padding: 0.95rem;
+                border-radius: 18px;
+                background: var(--panel-soft);
+                border: 1px solid var(--border);
+            }
+
+            .metric-card strong {
+                display: block;
+                margin-top: 0.3rem;
+                color: var(--text);
+                font-size: 1.05rem;
+            }
+
+            .section-label {
+                display: block;
+                margin: 0.2rem 0 0.8rem 0;
+            }
+
+            .suggestion-card {
+                min-height: 168px;
+                padding: 1rem;
+                border-radius: var(--radius-lg);
+                margin-bottom: 0.75rem;
+            }
+
+            .suggestion-card h3 {
+                margin: 0.7rem 0 0.45rem 0;
+                font-size: 1.35rem;
+                line-height: 1.05;
+            }
+
+            .suggestion-card p {
+                margin: 0;
+                line-height: 1.72;
+            }
+
+            .message-label {
+                display: block;
+                margin-bottom: 0.35rem;
+            }
+
+            .helper-note {
+                padding: 0.95rem 1rem;
+                margin-top: 0.2rem;
+                border-radius: 16px;
+                background: var(--panel-soft);
+                border: 1px solid var(--border);
+                color: var(--muted);
+            }
+
+            @media (max-width: 900px) {
+                .top-shell {
+                    grid-template-columns: 1fr;
+                }
+
+                .top-shell h1 {
+                    max-width: none;
+                    font-size: 2.7rem;
+                }
+
+                div[data-testid="stChatMessage"][aria-label="assistant message"],
+                div[data-testid="stChatMessage"][aria-label="user message"] {
+                    margin-left: 0;
+                    margin-right: 0;
+                }
+            }
+
+            @media (prefers-reduced-motion: reduce) {
+                *, *::before, *::after {
+                    animation: none !important;
+                    transition: none !important;
+                    scroll-behavior: auto !important;
+                }
             }
         </style>
         """,
@@ -30,88 +389,254 @@ def inject_css() -> None:
     )
 
 
-def render_welcome() -> str | None:
+def render_sidebar(database, active_chat_id: int, settings: dict):
+    with st.sidebar:
+        st.markdown(
+            """
+            <div class="sidebar-shell">
+                <h2>Workspace</h2>
+                <p>Historico salvo, contexto por arquivo e ajustes do modelo em um layout mais limpo.</p>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+        if st.button("+ Novo chat", use_container_width=True, type="primary"):
+            return "new_chat"
+
+        st.caption("Conversas")
+        chats = database.list_chats()
+        for chat in chats:
+            label = chat["title"]
+            if st.button(
+                label,
+                key=f"chat_{chat['id']}",
+                use_container_width=True,
+                type="primary" if chat["id"] == active_chat_id else "secondary",
+            ):
+                return chat["id"]
+
+        st.divider()
+        st.subheader("Configuracoes")
+        settings["model"] = st.selectbox(
+            "Modelo",
+            options=["gemini-2.5-flash", "gemini-2.5-pro"],
+            index=0 if settings["model"] == "gemini-2.5-flash" else 1,
+        )
+        settings["temperature"] = st.slider(
+            "Temperatura",
+            min_value=0.0,
+            max_value=1.5,
+            value=float(settings["temperature"]),
+            step=0.1,
+        )
+        settings["max_output_tokens"] = st.slider(
+            "Max output tokens",
+            min_value=256,
+            max_value=4096,
+            value=int(settings["max_output_tokens"]),
+            step=256,
+        )
+        settings["stream"] = st.toggle("Streaming", value=bool(settings["stream"]))
+        settings["system_prompt"] = st.text_area(
+            "System prompt",
+            value=settings.get("system_prompt", ""),
+            height=140,
+            placeholder="Instrucoes extras para o modelo...",
+        )
+
+        st.markdown(
+            f"""
+            <div class="sidebar-note">
+                <span>Sessao atual</span>
+                <strong>{html.escape(settings["model"])}</strong>
+                <p>Temperatura {settings["temperature"]:.1f} | Streaming {"ligado" if settings["stream"] else "desligado"}</p>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+        st.divider()
+        if st.button("Excluir chat atual", use_container_width=True):
+            return "delete_chat"
+
+    return None
+
+
+def render_chat_header(
+    chat_title: str,
+    settings: dict,
+    chat_count: int,
+    message_count: int,
+) -> None:
+    safe_title = html.escape(chat_title)
     st.markdown(
-        """
-        <div class="hero">
-            <h1>Como posso ajudar hoje?</h1>
-            <p>Faça perguntas, peça explicações de código ou analise arquivos.</p>
+        f"""
+        <div class="top-shell">
+            <div>
+                <span class="eyebrow">Chat com contexto</span>
+                <h1>Um chat mais limpo, util e apresentavel.</h1>
+                <p>
+                    Sem exagero visual, sem cara de demo. So uma interface clara para conversar,
+                    estudar, anexar arquivos e manter historico com boa hierarquia.
+                </p>
+                <div class="meta-row">
+                    <span class="meta-pill"><strong>Conversa:</strong> {safe_title}</span>
+                    <span class="meta-pill"><strong>Modelo:</strong> {html.escape(settings["model"])}</span>
+                    <span class="meta-pill"><strong>Streaming:</strong> {"ON" if settings["stream"] else "OFF"}</span>
+                </div>
+            </div>
+            <div class="stats-shell">
+                <div class="metric-card">
+                    <span>Chats salvos</span>
+                    <strong>{chat_count}</strong>
+                </div>
+                <div class="metric-card">
+                    <span>Mensagens desta conversa</span>
+                    <strong>{message_count}</strong>
+                </div>
+            </div>
         </div>
         """,
         unsafe_allow_html=True,
     )
 
-    suggestions = [
-        "Explique um código Python",
-        "Resuma um texto",
-        "Crie um plano de estudos",
-        "Monte um checklist para deploy",
-    ]
-    cols = st.columns(2)
-    for idx, suggestion in enumerate(suggestions):
-        with cols[idx % 2]:
-            if st.button(suggestion, use_container_width=True):
-                return suggestion
-    return None
+
+def render_empty_state() -> str | None:
+    st.markdown('<span class="section-label">Sugestoes para comecar</span>', unsafe_allow_html=True)
+    selected_prompt = None
+    columns = st.columns(2)
+
+    for index, item in enumerate(SUGGESTED_PROMPTS):
+        with columns[index % 2]:
+            st.markdown(
+                f"""
+                <div class="suggestion-card">
+                    <span class="suggestion-tag">{item["tag"]}</span>
+                    <h3>{item["title"]}</h3>
+                    <p>{item["body"]}</p>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+            if st.button(item["cta"], key=f"suggestion_{index}", use_container_width=True):
+                selected_prompt = item["prompt"]
+
+    st.markdown(
+        """
+        <div class="helper-note">
+            Anexe um PDF, DOCX, TXT ou CSV e faca a pergunta em seguida. O arquivo entra como contexto para a proxima resposta.
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+    return selected_prompt
 
 
-def render_chat_messages(messages: list[dict[str, str]]) -> None:
-    for i, msg in enumerate(messages):
-        with st.chat_message("assistant" if msg["role"] == "assistant" else "user"):
-            st.markdown(msg["content"])
-            if msg["role"] == "assistant":
-                with st.expander("Ver markdown bruto / copiar"):
-                    st.code(msg["content"], language="markdown")
-                st.download_button(
-                    "Baixar resposta (.md)",
-                    msg["content"],
-                    file_name=f"resposta_{i}.md",
-                    mime="text/markdown",
-                    key=f"download_{i}",
-                )
+def render_chat_messages(messages: list[dict]) -> None:
+    for message in messages:
+        label = "Voce" if message["role"] == "user" else "Assistente"
+        with st.chat_message(message["role"]):
+            st.markdown(f'<span class="message-label">{label}</span>', unsafe_allow_html=True)
+            st.markdown(message["content"])
 
 
-def read_uploaded_files(uploaded_files: list) -> str:
-    all_chunks: list[str] = []
+def render_response_tools(
+    response_text: str,
+    key_suffix: str,
+    token_estimate: int | None = None,
+) -> None:
+    if token_estimate is not None:
+        st.caption(f"Contexto enviado ao modelo: ~{token_estimate} tokens")
+    with st.expander("Ver resposta em markdown"):
+        st.code(response_text, language="markdown")
+    st.download_button(
+        "Baixar resposta .md",
+        data=response_text,
+        file_name=f"resposta_{key_suffix}.md",
+        mime="text/markdown",
+        key=f"download_{key_suffix}",
+        use_container_width=False,
+    )
 
-    for f in uploaded_files:
-        suffix = f.name.lower().split(".")[-1]
 
-        if suffix == "txt":
-            all_chunks.append(f"\n### {f.name}\n" + f.getvalue().decode("utf-8", errors="ignore"))
+def read_uploaded_file(uploaded_file) -> str:
+    suffix = uploaded_file.name.lower().rsplit(".", maxsplit=1)[-1]
 
-        elif suffix == "csv":
-            content = f.getvalue().decode("utf-8", errors="ignore")
-            reader = csv.reader(io.StringIO(content))
-            preview_rows = []
-            for idx, row in enumerate(reader):
-                if idx >= 30:
-                    break
-                preview_rows.append(", ".join(cell.strip() for cell in row))
-            all_chunks.append(f"\n### {f.name} (prévia)\n" + "\n".join(preview_rows))
+    if suffix == "txt":
+        return uploaded_file.getvalue().decode("utf-8", errors="ignore")
 
-        elif suffix == "pdf":
-            try:
-                from pypdf import PdfReader
+    if suffix == "csv":
+        return uploaded_file.getvalue().decode("utf-8", errors="ignore")
 
-                reader = PdfReader(io.BytesIO(f.getvalue()))
-                text = "\n".join((page.extract_text() or "") for page in reader.pages[:20])
-                all_chunks.append(f"\n### {f.name}\n{text}")
-            except Exception:
-                all_chunks.append(
-                    f"\n### {f.name}\nNão foi possível extrair PDF (verifique dependência pypdf)."
-                )
+    if suffix == "pdf":
+        try:
+            from pypdf import PdfReader
+        except ImportError as exc:
+            raise RuntimeError("Instale pypdf para ler arquivos PDF.") from exc
 
-        elif suffix == "docx":
-            try:
-                import docx
+        reader = PdfReader(BytesIO(uploaded_file.getvalue()))
+        pages = []
+        for page in reader.pages:
+            text = page.extract_text() or ""
+            cleaned = text.strip()
+            if cleaned:
+                pages.append(cleaned)
+        if not pages:
+            raise RuntimeError("Nao foi possivel extrair texto do PDF enviado.")
+        return "\n\n".join(pages)
 
-                document = docx.Document(io.BytesIO(f.getvalue()))
-                text = "\n".join(p.text for p in document.paragraphs[:300])
-                all_chunks.append(f"\n### {f.name}\n{text}")
-            except Exception:
-                all_chunks.append(
-                    f"\n### {f.name}\nNão foi possível extrair DOCX (verifique dependência python-docx)."
-                )
+    if suffix == "docx":
+        try:
+            from docx import Document
+        except ImportError as exc:
+            raise RuntimeError("Instale python-docx para ler arquivos DOCX.") from exc
 
-    return "\n".join(all_chunks).strip()
+        document = Document(uploaded_file)
+        return "\n".join(paragraph.text for paragraph in document.paragraphs if paragraph.text.strip())
+
+    raise RuntimeError("Formato de arquivo nao suportado.")
+
+
+def render_file_uploader() -> None:
+    uploaded_file = st.file_uploader(
+        "Anexar contexto (txt, csv, docx, pdf)",
+        type=["txt", "csv", "docx", "pdf"],
+        accept_multiple_files=False,
+    )
+    if not uploaded_file:
+        st.session_state.pending_file_context = None
+        st.session_state.uploaded_file_signature = None
+        st.session_state.uploaded_file_name = None
+        st.session_state.file_context_consumed = False
+        return
+
+    file_bytes = uploaded_file.getvalue()
+    file_signature = hashlib.sha256(file_bytes).hexdigest()
+
+    if st.session_state.get("uploaded_file_signature") == file_signature:
+        if st.session_state.get("pending_file_context"):
+            st.success(f"Arquivo pronto para a proxima pergunta: {uploaded_file.name}")
+        elif st.session_state.get("file_context_consumed"):
+            st.caption(f"Arquivo ja usado na ultima pergunta: {uploaded_file.name}")
+        return
+
+    try:
+        content = read_uploaded_file(uploaded_file)
+        st.session_state.pending_file_context = content[:MAX_FILE_CONTEXT_CHARS]
+        st.session_state.uploaded_file_signature = file_signature
+        st.session_state.uploaded_file_name = uploaded_file.name
+        st.session_state.file_context_consumed = False
+        st.success(f"Arquivo carregado: {uploaded_file.name}")
+    except Exception as exc:
+        st.error(f"Nao foi possivel ler o arquivo: {exc}")
+
+
+def render_error_message(exc: Exception) -> str:
+    text = str(exc)
+    lowered = text.lower()
+    if "api key" in lowered or "chave" in lowered:
+        return "Nao encontrei a chave da API. Confira o arquivo .env e tente novamente."
+    if "quota" in lowered or "429" in lowered:
+        return "O limite da API foi atingido no momento. Tente novamente em alguns segundos."
+    return f"Nao consegui falar com o Gemini agora. Detalhe tecnico: {text}"

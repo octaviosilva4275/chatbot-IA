@@ -1,157 +1,191 @@
-from __future__ import annotations
+import os
 
 import streamlit as st
+from dotenv import load_dotenv
 
-from src.chat_state import ContextConfig, approximate_tokens, build_context_with_summary
-from src.database import (
-    add_message,
-    auto_title_from_text,
-    create_conversation,
-    delete_conversation,
-    get_messages,
-    init_db,
-    list_conversations,
-    rename_conversation,
+from src.chat_state import (
+    build_generation_prompt,
+    default_generation_settings,
+    ensure_session_state,
+    generate_chat_title,
+    get_effective_system_prompt,
 )
+from src.database import ChatDatabase
 from src.gemini_client import GeminiClient
-from src.ui import inject_css, read_uploaded_files, render_chat_messages, render_welcome
-
-
-st.set_page_config(
-    page_title="Chat Gemini Pro",
-    page_icon="💬",
-    layout="wide",
-    initial_sidebar_state="expanded",
+from src.ui import (
+    apply_global_styles,
+    render_chat_header,
+    render_chat_messages,
+    render_empty_state,
+    render_error_message,
+    render_file_uploader,
+    render_response_tools,
+    render_sidebar,
 )
 
-init_db()
-inject_css()
 
+def bootstrap() -> tuple[ChatDatabase, GeminiClient]:
+    load_dotenv()
 
-if "active_conversation_id" not in st.session_state:
-    existing = list_conversations()
-    st.session_state.active_conversation_id = (
-        existing[0]["id"] if existing else create_conversation()
+    st.set_page_config(
+        page_title="Chat Workspace",
+        page_icon="AI",
+        layout="wide",
+        initial_sidebar_state="expanded",
     )
 
+    ensure_session_state()
+    apply_global_styles()
 
-with st.sidebar:
-    st.title("💬 Seus chats")
+    api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
+    database = ChatDatabase()
+    client = GeminiClient(api_key=api_key)
+    return database, client
 
-    if st.button("+ Novo chat", use_container_width=True):
-        st.session_state.active_conversation_id = create_conversation()
+
+def ensure_active_chat(database: ChatDatabase) -> int:
+    active_chat_id = st.session_state.get("active_chat_id")
+    if active_chat_id is not None and database.chat_exists(active_chat_id):
+        return active_chat_id
+
+    chats = database.list_chats()
+    if chats:
+        active_chat_id = chats[0]["id"]
+    else:
+        active_chat_id = database.create_chat()
+
+    st.session_state.active_chat_id = active_chat_id
+    return active_chat_id
+
+
+def create_new_chat(database: ChatDatabase) -> int:
+    chat_id = database.create_chat()
+    st.session_state.active_chat_id = chat_id
+    st.session_state.pending_file_context = None
+    st.session_state.file_context_consumed = True
+    return chat_id
+
+
+def delete_current_chat(database: ChatDatabase, chat_id: int) -> None:
+    database.delete_chat(chat_id)
+    chats = database.list_chats()
+    st.session_state.active_chat_id = chats[0]["id"] if chats else database.create_chat()
+    st.session_state.pending_file_context = None
+    st.session_state.file_context_consumed = True
+
+
+def maybe_store_auto_title(database: ChatDatabase, chat_id: int, user_message: str) -> None:
+    chat = database.get_chat(chat_id)
+    if not chat:
+        return
+    if chat["title"] != "Novo chat":
+        return
+
+    title = generate_chat_title(user_message)
+    database.rename_chat(chat_id, title)
+
+
+def handle_user_message(
+    database: ChatDatabase,
+    client: GeminiClient,
+    chat_id: int,
+    user_message: str,
+) -> None:
+    file_context = st.session_state.get("pending_file_context")
+
+    database.add_message(chat_id, "user", user_message)
+    maybe_store_auto_title(database, chat_id, user_message)
+
+    with st.chat_message("user"):
+        st.markdown('<div class="message-label">Voce</div>', unsafe_allow_html=True)
+        st.markdown(user_message)
+
+    messages = database.get_messages(chat_id)
+    settings = st.session_state.generation_settings
+    prompt, token_estimate = build_generation_prompt(
+        messages=messages,
+        system_prompt=get_effective_system_prompt(settings),
+        transient_context=file_context,
+    )
+
+    with st.chat_message("assistant"):
+        st.markdown('<div class="message-label">Assistente</div>', unsafe_allow_html=True)
+        placeholder = st.empty()
+        consumed_file_context = False
+        try:
+            response_text = client.generate_response(
+                prompt=prompt,
+                model=settings["model"],
+                temperature=settings["temperature"],
+                max_output_tokens=settings["max_output_tokens"],
+                stream=settings["stream"],
+                placeholder=placeholder,
+            )
+            render_response_tools(
+                response_text,
+                key_suffix=str(len(messages)),
+                token_estimate=token_estimate,
+            )
+            consumed_file_context = True
+        except Exception as exc:
+            response_text = render_error_message(exc)
+            placeholder.error(response_text)
+
+    database.add_message(chat_id, "assistant", response_text)
+    if consumed_file_context:
+        st.session_state.pending_file_context = None
+        st.session_state.file_context_consumed = bool(file_context)
+
+
+def main() -> None:
+    database, client = bootstrap()
+    st.session_state.generation_settings = st.session_state.get(
+        "generation_settings",
+        default_generation_settings(),
+    )
+
+    active_chat_id = ensure_active_chat(database)
+    sidebar_action = render_sidebar(
+        database=database,
+        active_chat_id=active_chat_id,
+        settings=st.session_state.generation_settings,
+    )
+
+    if sidebar_action == "new_chat":
+        create_new_chat(database)
+        st.rerun()
+    if sidebar_action == "delete_chat":
+        delete_current_chat(database, active_chat_id)
+        st.rerun()
+    if isinstance(sidebar_action, int):
+        st.session_state.active_chat_id = sidebar_action
         st.rerun()
 
-    conversations = list_conversations()
-    if not conversations:
-        st.info("Nenhuma conversa ainda.")
+    active_chat_id = ensure_active_chat(database)
+    messages = database.get_messages(active_chat_id)
+    chat = database.get_chat(active_chat_id)
+    chat_count = len(database.list_chats())
+
+    render_chat_header(
+        chat_title=chat["title"] if chat else "Novo chat",
+        settings=st.session_state.generation_settings,
+        chat_count=chat_count,
+        message_count=len(messages),
+    )
+    render_file_uploader()
+
+    selected_prompt = None
+    if messages:
+        render_chat_messages(messages)
     else:
-        for conv in conversations:
-            cols = st.columns([4, 1])
-            active = conv["id"] == st.session_state.active_conversation_id
-            label = ("🟢 " if active else "") + conv["title"]
-            if cols[0].button(label, key=f"select_{conv['id']}", use_container_width=True):
-                st.session_state.active_conversation_id = conv["id"]
-                st.rerun()
-            if cols[1].button("🗑️", key=f"del_{conv['id']}"):
-                delete_conversation(conv["id"])
-                if st.session_state.active_conversation_id == conv["id"]:
-                    remain = list_conversations()
-                    st.session_state.active_conversation_id = (
-                        remain[0]["id"] if remain else create_conversation()
-                    )
-                st.rerun()
+        selected_prompt = render_empty_state()
 
-    st.divider()
-    st.subheader("⚙️ Configurações")
-    model_name = st.selectbox("Modelo", ["gemini-2.5-flash", "gemini-2.5-pro"])
-    temperature = st.slider("Temperatura", 0.0, 1.5, 0.7, 0.1)
-    max_output_tokens = st.slider("Max output tokens", 128, 4096, 1024, 128)
-    use_streaming = st.toggle("Streaming", value=True)
-    system_prompt = st.text_area(
-        "System prompt",
-        value="Você é um assistente útil, objetivo e didático.",
-        height=120,
-    )
-
-    st.divider()
-    uploaded_files = st.file_uploader(
-        "Upload de arquivos",
-        type=["pdf", "txt", "docx", "csv"],
-        accept_multiple_files=True,
-        help="Envie documentos para adicionar contexto na próxima mensagem.",
-    )
+    prompt = st.chat_input("Digite sua mensagem...")
+    prompt = prompt or selected_prompt
+    if prompt:
+        handle_user_message(database, client, active_chat_id, prompt)
+        st.rerun()
 
 
-active_id = st.session_state.active_conversation_id
-messages = get_messages(active_id)
-
-if not messages:
-    suggested = render_welcome()
-else:
-    suggested = None
-
-render_chat_messages(messages)
-
-prompt = st.chat_input("Digite sua mensagem...")
-if not prompt and suggested:
-    prompt = suggested
-
-if prompt:
-    file_context = read_uploaded_files(uploaded_files or [])
-    user_content = prompt
-    if file_context:
-        user_content += (
-            "\n\nContexto extraído de arquivos enviados (use se relevante):\n" + file_context
-        )
-
-    add_message(active_id, "user", user_content)
-    st.chat_message("user").markdown(prompt)
-
-    try:
-        client = GeminiClient(model_name=model_name)
-
-        history = get_messages(active_id)
-        recent, summary = build_context_with_summary(history, ContextConfig())
-
-        effective_messages = recent
-        if summary:
-            effective_messages = [{"role": "user", "content": summary}] + recent
-
-        full_answer = client.generate(
-            messages=effective_messages,
-            system_prompt=system_prompt,
-            temperature=temperature,
-            max_output_tokens=max_output_tokens,
-        )
-
-        with st.chat_message("assistant"):
-            if use_streaming:
-                def chunks(text: str):
-                    for word in text.split(" "):
-                        yield word + " "
-                st.write_stream(chunks(full_answer))
-            else:
-                st.markdown(full_answer)
-
-            with st.expander("Ver markdown bruto / copiar"):
-                st.code(full_answer, language="markdown")
-
-        add_message(active_id, "assistant", full_answer)
-
-        if len(history) <= 1:
-            rename_conversation(active_id, auto_title_from_text(prompt))
-
-        token_estimate = approximate_tokens(prompt + full_answer)
-        st.caption(f"Tokens aproximados nesta interação: {token_estimate}")
-
-    except RuntimeError as err:
-        st.error(
-            "Não encontrei a chave da API. Configure GEMINI_API_KEY no arquivo .env para continuar."
-        )
-        st.exception(err)
-    except Exception as err:
-        st.error(
-            "Não consegui falar com o Gemini agora. Tente novamente em alguns segundos."
-        )
-        st.exception(err)
+if __name__ == "__main__":
+    main()

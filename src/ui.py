@@ -47,19 +47,20 @@ def apply_global_styles() -> None:
             @import url('https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Source+Serif+4:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
 
             :root {
-                --bg: #f7f4ee;
-                --bg-soft: #fbfaf7;
+                --bg: #f4f7fb;
+                --bg-soft: #fbfdff;
                 --panel: #ffffff;
-                --panel-soft: #fcfbf8;
-                --panel-muted: #f1ece3;
-                --border: #e5ddd0;
-                --border-strong: #d8cdbd;
-                --text: #2f2a24;
-                --muted: #6d655b;
-                --accent: #9a6248;
-                --accent-soft: #efe3d8;
-                --success-soft: #e9f0e5;
-                --shadow: 0 10px 30px rgba(51, 37, 24, 0.05);
+                --panel-soft: #f7f9fc;
+                --panel-muted: #edf2fa;
+                --border: #dce5f1;
+                --border-strong: #c8d6ea;
+                --text: #172033;
+                --muted: #5a667e;
+                --accent: #2f6fff;
+                --accent-soft: #e9f0ff;
+                --success-soft: #e6f4ec;
+                --shadow: 0 14px 34px rgba(23, 32, 51, 0.08);
+                --shadow-soft: 0 8px 18px rgba(23, 32, 51, 0.05);
                 --radius-xl: 26px;
                 --radius-lg: 20px;
                 --radius-md: 16px;
@@ -73,8 +74,9 @@ def apply_global_styles() -> None:
             .stApp {
                 color: var(--text);
                 background:
-                    radial-gradient(circle at top left, rgba(154, 98, 72, 0.05), transparent 20%),
-                    linear-gradient(180deg, #faf7f2 0%, #f7f4ee 100%);
+                    radial-gradient(circle at top left, rgba(47, 111, 255, 0.14), transparent 30%),
+                    radial-gradient(circle at 90% -10%, rgba(10, 196, 255, 0.1), transparent 35%),
+                    linear-gradient(180deg, #f8fbff 0%, #f2f6fc 100%);
             }
 
             .block-container {
@@ -84,7 +86,7 @@ def apply_global_styles() -> None:
             }
 
             section[data-testid="stSidebar"] > div {
-                background: #f3eee6;
+                background: #f5f8fd;
                 border-right: 1px solid var(--border);
             }
 
@@ -108,29 +110,31 @@ def apply_global_styles() -> None:
                 min-height: 46px;
                 border-radius: 14px;
                 border: 1px solid var(--border);
-                background: var(--panel);
+                background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
                 color: var(--text);
                 box-shadow: none;
-                transition: background 180ms ease, border-color 180ms ease, transform 180ms ease;
+                transition: background 180ms ease, border-color 180ms ease, transform 180ms ease, box-shadow 180ms ease;
                 cursor: pointer;
+                font-weight: 600;
             }
 
             .stButton > button:hover,
             .stDownloadButton > button:hover {
-                background: var(--bg-soft);
-                border-color: var(--border-strong);
+                background: #ffffff;
+                border-color: #b8c9e4;
                 transform: translateY(-1px);
+                box-shadow: var(--shadow-soft);
             }
 
             .stButton > button[kind="primary"] {
-                background: var(--text);
+                background: linear-gradient(180deg, #3f7dff 0%, #2f6fff 100%);
                 color: white;
-                border-color: var(--text);
+                border-color: #2f6fff;
             }
 
             .stButton > button[kind="primary"]:hover {
-                background: #1f1b17;
-                border-color: #1f1b17;
+                background: linear-gradient(180deg, #4a86ff 0%, #3b79ff 100%);
+                border-color: #3b79ff;
             }
 
             .stButton > button:focus-visible,
@@ -138,7 +142,7 @@ def apply_global_styles() -> None:
             textarea:focus-visible,
             input:focus-visible,
             [data-baseweb="select"] input:focus-visible {
-                outline: 3px solid rgba(154, 98, 72, 0.16);
+                outline: 3px solid rgba(47, 111, 255, 0.24);
                 outline-offset: 2px;
             }
 
@@ -163,11 +167,6 @@ def apply_global_styles() -> None:
                 padding: 1rem;
             }
 
-            [data-testid="stChatInput"] {
-                background: linear-gradient(180deg, rgba(247,244,238,0.2) 0%, rgba(247,244,238,0.94) 40%, rgba(247,244,238,1) 100%);
-                border-top: 1px solid rgba(229, 221, 208, 0.9);
-            }
-
             [data-testid="stChatInput"] textarea {
                 background: var(--panel) !important;
                 color: var(--text) !important;
@@ -178,7 +177,7 @@ def apply_global_styles() -> None:
             div[data-testid="stChatMessage"] {
                 border: 1px solid var(--border);
                 border-radius: 22px;
-                padding: 0.45rem 0.65rem;
+                padding: 0.5rem 0.75rem;
                 margin-bottom: 0.95rem;
                 box-shadow: var(--shadow);
             }
@@ -190,7 +189,7 @@ def apply_global_styles() -> None:
 
             div[data-testid="stChatMessage"][aria-label="user message"] {
                 background: var(--accent-soft);
-                border-color: #dcc8b9;
+                border-color: #c8d9ff;
                 margin-left: 9%;
             }
 
@@ -264,6 +263,16 @@ def apply_global_styles() -> None:
                 padding: 1.35rem;
                 border-radius: var(--radius-xl);
                 margin-bottom: 1.2rem;
+                position: relative;
+                overflow: hidden;
+            }
+
+            .top-shell::before {
+                content: "";
+                position: absolute;
+                inset: 0;
+                background: linear-gradient(120deg, rgba(47,111,255,0.08), rgba(10,196,255,0.03) 42%, transparent 70%);
+                pointer-events: none;
             }
 
             .top-shell h1 {
@@ -292,10 +301,11 @@ def apply_global_styles() -> None:
                 gap: 0.35rem;
                 padding: 0.62rem 0.82rem;
                 border-radius: 999px;
-                background: var(--panel-soft);
+                background: rgba(255, 255, 255, 0.78);
                 border: 1px solid var(--border);
                 color: var(--text);
                 font-size: 0.9rem;
+                backdrop-filter: blur(2px);
             }
 
             .meta-pill strong {
@@ -311,7 +321,7 @@ def apply_global_styles() -> None:
             .metric-card {
                 padding: 0.95rem;
                 border-radius: 18px;
-                background: var(--panel-soft);
+                background: linear-gradient(180deg, #ffffff 0%, #f7f9fd 100%);
                 border: 1px solid var(--border);
             }
 
@@ -332,6 +342,7 @@ def apply_global_styles() -> None:
                 padding: 1rem;
                 border-radius: var(--radius-lg);
                 margin-bottom: 0.75rem;
+                background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
             }
 
             .suggestion-card h3 {

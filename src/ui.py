@@ -93,6 +93,11 @@ def apply_global_styles() -> None:
                 backdrop-filter: blur(8px);
             }
 
+            [data-testid="stBottomBlockContainer"] {
+                background: linear-gradient(180deg, rgba(10,18,36,0.1) 0%, rgba(10,18,36,0.86) 45%, rgba(10,18,36,1) 100%) !important;
+                border-top: 1px solid var(--border);
+            }
+
             .block-container {
                 max-width: 1120px;
                 padding-top: 1.1rem;
@@ -194,6 +199,12 @@ def apply_global_styles() -> None:
                 padding-top: 0.95rem !important;
             }
 
+            [data-testid="stChatInput"] > div {
+                background: var(--panel) !important;
+                border: 1px solid var(--border) !important;
+                border-radius: 18px !important;
+            }
+
             div[data-testid="stChatMessage"] {
                 border: 1px solid var(--border);
                 border-radius: 22px;
@@ -218,6 +229,16 @@ def apply_global_styles() -> None:
                 color: var(--text);
                 line-height: 1.75;
                 font-size: 0.99rem;
+            }
+
+            div[data-testid="stChatMessage"] [data-testid="stMarkdownContainer"] {
+                background: transparent !important;
+                color: var(--text) !important;
+            }
+
+            div[data-testid="stChatMessage"] pre {
+                background: #0f1930 !important;
+                border: 1px solid var(--border);
             }
 
             div[data-testid="stChatMessage"] code,

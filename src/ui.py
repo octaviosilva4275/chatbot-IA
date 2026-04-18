@@ -167,11 +167,6 @@ def apply_global_styles() -> None:
                 padding: 1rem;
             }
 
-            [data-testid="stChatInput"] {
-                background: linear-gradient(180deg, rgba(242,246,252,0.22) 0%, rgba(242,246,252,0.94) 40%, rgba(242,246,252,1) 100%);
-                border-top: 1px solid rgba(220, 229, 241, 0.9);
-            }
-
             [data-testid="stChatInput"] textarea {
                 background: var(--panel) !important;
                 color: var(--text) !important;

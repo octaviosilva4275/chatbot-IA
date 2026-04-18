@@ -21,6 +21,7 @@ isso normalmente **não é um erro de CSS ou do código da aplicação**. Em ger
 3. Verifique data/hora do sistema.
 4. Desative temporariamente inspeção HTTPS do antivírus/proxy (se permitido).
 5. Em ambiente corporativo, peça ao TI para instalar a cadeia de certificados correta.
+6. Como contingência, rode localmente: `streamlit run app.py`.
 
 ## Modo seguro de UI
 

@@ -47,20 +47,20 @@ def apply_global_styles() -> None:
             @import url('https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Source+Serif+4:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
 
             :root {
-                --bg: #f4f7fb;
-                --bg-soft: #fbfdff;
-                --panel: #ffffff;
-                --panel-soft: #f7f9fc;
-                --panel-muted: #edf2fa;
-                --border: #dce5f1;
-                --border-strong: #c8d6ea;
-                --text: #172033;
-                --muted: #5a667e;
-                --accent: #2f6fff;
-                --accent-soft: #e9f0ff;
-                --success-soft: #e6f4ec;
-                --shadow: 0 14px 34px rgba(23, 32, 51, 0.08);
-                --shadow-soft: 0 8px 18px rgba(23, 32, 51, 0.05);
+                --bg: #090f1f;
+                --bg-soft: #101a31;
+                --panel: #141f3a;
+                --panel-soft: #1a2848;
+                --panel-muted: #223257;
+                --border: #2c406b;
+                --border-strong: #3a5285;
+                --text: #e9efff;
+                --muted: #a6b5d8;
+                --accent: #6d93ff;
+                --accent-soft: #213969;
+                --success-soft: #1f3d34;
+                --shadow: 0 16px 40px rgba(2, 7, 20, 0.5);
+                --shadow-soft: 0 10px 24px rgba(2, 7, 20, 0.35);
                 --radius-xl: 26px;
                 --radius-lg: 20px;
                 --radius-md: 16px;
@@ -74,9 +74,9 @@ def apply_global_styles() -> None:
             .stApp {
                 color: var(--text);
                 background:
-                    radial-gradient(circle at top left, rgba(47, 111, 255, 0.14), transparent 30%),
-                    radial-gradient(circle at 90% -10%, rgba(10, 196, 255, 0.1), transparent 35%),
-                    linear-gradient(180deg, #f8fbff 0%, #f2f6fc 100%);
+                    radial-gradient(circle at top left, rgba(109, 147, 255, 0.25), transparent 36%),
+                    radial-gradient(circle at 85% -10%, rgba(76, 229, 255, 0.16), transparent 38%),
+                    linear-gradient(180deg, #0a1224 0%, #0e1830 100%);
             }
 
             .block-container {
@@ -86,7 +86,7 @@ def apply_global_styles() -> None:
             }
 
             section[data-testid="stSidebar"] > div {
-                background: #f5f8fd;
+                background: #0f1930;
                 border-right: 1px solid var(--border);
             }
 
@@ -110,8 +110,8 @@ def apply_global_styles() -> None:
                 min-height: 46px;
                 border-radius: 14px;
                 border: 1px solid var(--border);
-                background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
-                color: var(--text);
+                background: linear-gradient(180deg, #1a2949 0%, #15223f 100%);
+                color: var(--text) !important;
                 box-shadow: none;
                 transition: background 180ms ease, border-color 180ms ease, transform 180ms ease, box-shadow 180ms ease;
                 cursor: pointer;
@@ -120,21 +120,21 @@ def apply_global_styles() -> None:
 
             .stButton > button:hover,
             .stDownloadButton > button:hover {
-                background: #ffffff;
-                border-color: #b8c9e4;
+                background: linear-gradient(180deg, #23375f 0%, #1b2b4f 100%);
+                border-color: #4a659b;
                 transform: translateY(-1px);
                 box-shadow: var(--shadow-soft);
             }
 
             .stButton > button[kind="primary"] {
-                background: linear-gradient(180deg, #3f7dff 0%, #2f6fff 100%);
-                color: white;
-                border-color: #2f6fff;
+                background: linear-gradient(180deg, #7aa0ff 0%, #5d87ff 100%);
+                color: #081225 !important;
+                border-color: #7aa0ff;
             }
 
             .stButton > button[kind="primary"]:hover {
-                background: linear-gradient(180deg, #4a86ff 0%, #3b79ff 100%);
-                border-color: #3b79ff;
+                background: linear-gradient(180deg, #8caeff 0%, #6f96ff 100%);
+                border-color: #8caeff;
             }
 
             .stButton > button:focus-visible,
@@ -189,7 +189,7 @@ def apply_global_styles() -> None:
 
             div[data-testid="stChatMessage"][aria-label="user message"] {
                 background: var(--accent-soft);
-                border-color: #c8d9ff;
+                border-color: #4b67a0;
                 margin-left: 9%;
             }
 
@@ -271,7 +271,7 @@ def apply_global_styles() -> None:
                 content: "";
                 position: absolute;
                 inset: 0;
-                background: linear-gradient(120deg, rgba(47,111,255,0.08), rgba(10,196,255,0.03) 42%, transparent 70%);
+                background: linear-gradient(120deg, rgba(109,147,255,0.2), rgba(76,229,255,0.08) 42%, transparent 70%);
                 pointer-events: none;
             }
 
@@ -301,7 +301,7 @@ def apply_global_styles() -> None:
                 gap: 0.35rem;
                 padding: 0.62rem 0.82rem;
                 border-radius: 999px;
-                background: rgba(255, 255, 255, 0.78);
+                background: rgba(27, 43, 79, 0.78);
                 border: 1px solid var(--border);
                 color: var(--text);
                 font-size: 0.9rem;
@@ -321,7 +321,7 @@ def apply_global_styles() -> None:
             .metric-card {
                 padding: 0.95rem;
                 border-radius: 18px;
-                background: linear-gradient(180deg, #ffffff 0%, #f7f9fd 100%);
+                background: linear-gradient(180deg, #1c2c50 0%, #162543 100%);
                 border: 1px solid var(--border);
             }
 
@@ -342,7 +342,7 @@ def apply_global_styles() -> None:
                 padding: 1rem;
                 border-radius: var(--radius-lg);
                 margin-bottom: 0.75rem;
-                background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+                background: linear-gradient(180deg, #1a2a4d 0%, #15223f 100%);
             }
 
             .suggestion-card h3 {
@@ -466,6 +466,21 @@ def render_sidebar(database, active_chat_id: int, settings: dict):
             """,
             unsafe_allow_html=True,
         )
+
+        st.divider()
+        with st.expander("Nao abre no navegador? (HSTS / certificado)"):
+            st.markdown(
+                """
+                Se aparecer **"Sua conexao nao e particular"** ou **HSTS**, isso costuma ser rede/proxy/certificado
+                e nao CSS do app. Teste:
+
+                1. Outra rede (4G/5G).
+                2. Outro navegador/dispositivo.
+                3. Data/hora do sistema.
+
+                Se precisar, abra em modo seguro: adicione `?safe_mode=1` na URL.
+                """
+            )
 
         st.divider()
         if st.button("Excluir chat atual", use_container_width=True):

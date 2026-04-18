@@ -41,3 +41,36 @@ GEMINI_API_KEY="sua_chave_aqui"
 ```
 
 O app agora prioriza `st.secrets` e usa variáveis de ambiente apenas como fallback.
+
+### Passo a passo (Streamlit Cloud)
+
+1. Abra o app no painel do Streamlit Cloud.
+2. Vá em **Settings > Secrets**.
+3. Cole:
+
+```toml
+GEMINI_API_KEY="sua_chave_aqui"
+```
+
+4. Salve e reinicie o app.
+
+### Passo a passo (rodando local)
+
+1. Crie o arquivo `.streamlit/secrets.toml` na raiz do projeto.
+2. Adicione:
+
+```toml
+GEMINI_API_KEY="sua_chave_aqui"
+```
+
+3. Rode `streamlit run app.py`.
+
+### Como ler no código
+
+No código Python:
+
+```python
+api_key = st.secrets.get("GEMINI_API_KEY")
+```
+
+Neste projeto, a leitura já está implementada com fallback para variáveis de ambiente.

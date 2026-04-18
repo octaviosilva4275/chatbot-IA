@@ -68,7 +68,9 @@ def apply_global_styles() -> None:
 
             html, body, [class*="css"] {
                 font-family: "Instrument Sans", sans-serif;
-                color-scheme: light;
+                color-scheme: dark;
+                color: var(--text);
+                background: transparent;
             }
 
             .stApp {
@@ -77,6 +79,18 @@ def apply_global_styles() -> None:
                     radial-gradient(circle at top left, rgba(109, 147, 255, 0.25), transparent 36%),
                     radial-gradient(circle at 85% -10%, rgba(76, 229, 255, 0.16), transparent 38%),
                     linear-gradient(180deg, #0a1224 0%, #0e1830 100%);
+            }
+
+            [data-testid="stAppViewContainer"],
+            [data-testid="stAppViewContainer"] > .main,
+            [data-testid="stMain"] {
+                background: transparent !important;
+            }
+
+            [data-testid="stHeader"] {
+                background: rgba(10, 18, 36, 0.72) !important;
+                border-bottom: 1px solid var(--border);
+                backdrop-filter: blur(8px);
             }
 
             .block-container {
@@ -155,6 +169,12 @@ def apply_global_styles() -> None:
                 border-radius: 16px !important;
                 color: var(--text) !important;
                 box-shadow: none !important;
+            }
+
+            [data-baseweb="select"] *,
+            [data-baseweb="input"] input,
+            [data-baseweb="input"] textarea {
+                color: var(--text) !important;
             }
 
             textarea {

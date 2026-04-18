@@ -47,19 +47,20 @@ def apply_global_styles() -> None:
             @import url('https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Source+Serif+4:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
 
             :root {
-                --bg: #f7f4ee;
-                --bg-soft: #fbfaf7;
-                --panel: #ffffff;
-                --panel-soft: #fcfbf8;
-                --panel-muted: #f1ece3;
-                --border: #e5ddd0;
-                --border-strong: #d8cdbd;
-                --text: #2f2a24;
-                --muted: #6d655b;
-                --accent: #9a6248;
-                --accent-soft: #efe3d8;
-                --success-soft: #e9f0e5;
-                --shadow: 0 10px 30px rgba(51, 37, 24, 0.05);
+                --bg: #090f1f;
+                --bg-soft: #101a31;
+                --panel: #141f3a;
+                --panel-soft: #1a2848;
+                --panel-muted: #223257;
+                --border: #2c406b;
+                --border-strong: #3a5285;
+                --text: #e9efff;
+                --muted: #a6b5d8;
+                --accent: #6d93ff;
+                --accent-soft: #213969;
+                --success-soft: #1f3d34;
+                --shadow: 0 16px 40px rgba(2, 7, 20, 0.5);
+                --shadow-soft: 0 10px 24px rgba(2, 7, 20, 0.35);
                 --radius-xl: 26px;
                 --radius-lg: 20px;
                 --radius-md: 16px;
@@ -73,8 +74,9 @@ def apply_global_styles() -> None:
             .stApp {
                 color: var(--text);
                 background:
-                    radial-gradient(circle at top left, rgba(154, 98, 72, 0.05), transparent 20%),
-                    linear-gradient(180deg, #faf7f2 0%, #f7f4ee 100%);
+                    radial-gradient(circle at top left, rgba(109, 147, 255, 0.25), transparent 36%),
+                    radial-gradient(circle at 85% -10%, rgba(76, 229, 255, 0.16), transparent 38%),
+                    linear-gradient(180deg, #0a1224 0%, #0e1830 100%);
             }
 
             .block-container {
@@ -84,7 +86,7 @@ def apply_global_styles() -> None:
             }
 
             section[data-testid="stSidebar"] > div {
-                background: #f3eee6;
+                background: #0f1930;
                 border-right: 1px solid var(--border);
             }
 
@@ -108,29 +110,31 @@ def apply_global_styles() -> None:
                 min-height: 46px;
                 border-radius: 14px;
                 border: 1px solid var(--border);
-                background: var(--panel);
-                color: var(--text);
+                background: linear-gradient(180deg, #1a2949 0%, #15223f 100%);
+                color: var(--text) !important;
                 box-shadow: none;
-                transition: background 180ms ease, border-color 180ms ease, transform 180ms ease;
+                transition: background 180ms ease, border-color 180ms ease, transform 180ms ease, box-shadow 180ms ease;
                 cursor: pointer;
+                font-weight: 600;
             }
 
             .stButton > button:hover,
             .stDownloadButton > button:hover {
-                background: var(--bg-soft);
-                border-color: var(--border-strong);
+                background: linear-gradient(180deg, #23375f 0%, #1b2b4f 100%);
+                border-color: #4a659b;
                 transform: translateY(-1px);
+                box-shadow: var(--shadow-soft);
             }
 
             .stButton > button[kind="primary"] {
-                background: var(--text);
-                color: white;
-                border-color: var(--text);
+                background: linear-gradient(180deg, #7aa0ff 0%, #5d87ff 100%);
+                color: #081225 !important;
+                border-color: #7aa0ff;
             }
 
             .stButton > button[kind="primary"]:hover {
-                background: #1f1b17;
-                border-color: #1f1b17;
+                background: linear-gradient(180deg, #8caeff 0%, #6f96ff 100%);
+                border-color: #8caeff;
             }
 
             .stButton > button:focus-visible,
@@ -138,7 +142,7 @@ def apply_global_styles() -> None:
             textarea:focus-visible,
             input:focus-visible,
             [data-baseweb="select"] input:focus-visible {
-                outline: 3px solid rgba(154, 98, 72, 0.16);
+                outline: 3px solid rgba(47, 111, 255, 0.24);
                 outline-offset: 2px;
             }
 
@@ -163,11 +167,6 @@ def apply_global_styles() -> None:
                 padding: 1rem;
             }
 
-            [data-testid="stChatInput"] {
-                background: linear-gradient(180deg, rgba(247,244,238,0.2) 0%, rgba(247,244,238,0.94) 40%, rgba(247,244,238,1) 100%);
-                border-top: 1px solid rgba(229, 221, 208, 0.9);
-            }
-
             [data-testid="stChatInput"] textarea {
                 background: var(--panel) !important;
                 color: var(--text) !important;
@@ -178,7 +177,7 @@ def apply_global_styles() -> None:
             div[data-testid="stChatMessage"] {
                 border: 1px solid var(--border);
                 border-radius: 22px;
-                padding: 0.45rem 0.65rem;
+                padding: 0.5rem 0.75rem;
                 margin-bottom: 0.95rem;
                 box-shadow: var(--shadow);
             }
@@ -190,7 +189,7 @@ def apply_global_styles() -> None:
 
             div[data-testid="stChatMessage"][aria-label="user message"] {
                 background: var(--accent-soft);
-                border-color: #dcc8b9;
+                border-color: #4b67a0;
                 margin-left: 9%;
             }
 
@@ -264,6 +263,16 @@ def apply_global_styles() -> None:
                 padding: 1.35rem;
                 border-radius: var(--radius-xl);
                 margin-bottom: 1.2rem;
+                position: relative;
+                overflow: hidden;
+            }
+
+            .top-shell::before {
+                content: "";
+                position: absolute;
+                inset: 0;
+                background: linear-gradient(120deg, rgba(109,147,255,0.2), rgba(76,229,255,0.08) 42%, transparent 70%);
+                pointer-events: none;
             }
 
             .top-shell h1 {
@@ -292,10 +301,11 @@ def apply_global_styles() -> None:
                 gap: 0.35rem;
                 padding: 0.62rem 0.82rem;
                 border-radius: 999px;
-                background: var(--panel-soft);
+                background: rgba(27, 43, 79, 0.78);
                 border: 1px solid var(--border);
                 color: var(--text);
                 font-size: 0.9rem;
+                backdrop-filter: blur(2px);
             }
 
             .meta-pill strong {
@@ -311,7 +321,7 @@ def apply_global_styles() -> None:
             .metric-card {
                 padding: 0.95rem;
                 border-radius: 18px;
-                background: var(--panel-soft);
+                background: linear-gradient(180deg, #1c2c50 0%, #162543 100%);
                 border: 1px solid var(--border);
             }
 
@@ -332,6 +342,7 @@ def apply_global_styles() -> None:
                 padding: 1rem;
                 border-radius: var(--radius-lg);
                 margin-bottom: 0.75rem;
+                background: linear-gradient(180deg, #1a2a4d 0%, #15223f 100%);
             }
 
             .suggestion-card h3 {
@@ -455,6 +466,21 @@ def render_sidebar(database, active_chat_id: int, settings: dict):
             """,
             unsafe_allow_html=True,
         )
+
+        st.divider()
+        with st.expander("Nao abre no navegador? (HSTS / certificado)"):
+            st.markdown(
+                """
+                Se aparecer **"Sua conexao nao e particular"** ou **HSTS**, isso costuma ser rede/proxy/certificado
+                e nao CSS do app. Teste:
+
+                1. Outra rede (4G/5G).
+                2. Outro navegador/dispositivo.
+                3. Data/hora do sistema.
+
+                Se precisar, abra em modo seguro: adicione `?safe_mode=1` na URL.
+                """
+            )
 
         st.divider()
         if st.button("Excluir chat atual", use_container_width=True):
